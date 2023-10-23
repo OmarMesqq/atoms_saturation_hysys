@@ -1,10 +1,9 @@
 ~~_Atoms.Saturation_Variables
 
+
 ExtensionVariables EV
    AttachmentVar "FeedStream" "FeedStream" "StreamObject" 0 Volatile AutoCompress Feed
    AttachmentVar "ProductStream" "ProductStream" "StreamObject" 0 Volatile AutoCompress Product
-   RealVar "DP" "DP" "PressureDrop" 0 Volatile TriggerSolve
-   RealVar "Duty" "Duty" "HeatFlow" 0 Volatile TriggerSolve
    ExtensionType "UnitOperation"
    ObjectDescription "ATOMS Saturation"
    BaseVariables "flowobj"
@@ -14,200 +13,55 @@ end
 
 SubViewMgr PageController
    TargetMoniker ":PageNumber.0"
-   State "Page1" 0.000000 0.000000 ":"
-   State "Page2" 1.000000 1.000000 ":"
-end
-
-StaticText NameLabel
-   Area 4 6 22 8
-   Label "&Name:"
-   SourceViewMgr PageController 1
-end
-
-TextEntry NameEntry
-   Area 30 4 75 12
-   TargetMoniker ":Name"
-   SourceViewMgr PageController 1
+   State "Connections" 0.000000 0.000000 ":"
 end
 
 PageTabs PageTabs
-   Area 0 146 238 16
+   Area 0 180 300 16
    TargetMoniker ":PageNumber.0"
    StretchWidth
    FixToBottom
    Tab 0.000000 "Connections"
-   Tab 1.000000 "Worksheet"
 end
 
 Form Main
    Title "%s"
-   Style Floating
    Widget PageController
-   Widget NameLabel
-   Widget NameEntry
-   Widget FeedStream
    Widget Inlet
-   Widget ProductStream
    Widget Outlet
-   Widget NumericalInput1
-   Widget StaticText1
-   Widget StaticText2
-   Widget NumericalInput2
-   Widget StaticText3
-   Widget StaticText4
-   Widget WSheetMatrix
+   Widget InletLabel
+   Widget OutletLabel
    Widget PageTabs
-   CanCropWidth
-   CanCropHeight
    Version 1
    PageBottom PageTabs
 end
 
-AttachmentName FeedStream
-   Area 30 50 75 12
-   TargetMoniker ":StreamObject.0.0(FeedStream)"
+
+StaticText InletLabel
+   Area 16 36 59 28
+   Label "Corrente de &entrada"
    SourceViewMgr PageController 1
+end
+
+AttachmentName Inlet
+   Area 16 44 55 13
+   TargetMoniker ":MaterialStreamObject.0.0(FeedStream)"
+   SourceViewMgr PageController 1
+   FlyByDescription "Entre com um nome para corrente de entrada"
    BlankText ""
 end
 
-StaticText Inlet
-   Area 30 36 16 8
-   Label "&Inlet"
+
+StaticText OutletLabel
+   Area 106 36 66 8
+   Label "Corrente de &saida"
    SourceViewMgr PageController 1
 end
 
-AttachmentName ProductStream
-   Area 138 50 75 12
-   TargetMoniker ":StreamObject.0.0(ProductStream)"
+AttachmentName Outlet
+   Area 106 44 55 13
+   TargetMoniker ":MaterialStreamObject.0.0(ProductStream)"
    SourceViewMgr PageController 1
+   FlyByDescription "Entre com um nome para corrente de saída"
    BlankText ""
 end
-
-StaticText Outlet
-   Area 140 36 20 8
-   Label "&Outlet"
-   SourceViewMgr PageController 1
-end
-
-NumericalInput NumericalInput1
-   Area 64 100 40 13
-   TargetMoniker ":ExtraData.0.0(DP)"
-   SourceViewMgr PageController 1
-end
-
-StaticText StaticText1
-   Area 34 102 23 8
-   Label "Delta&P"
-   SourceViewMgr PageController 1
-end
-
-StaticText StaticText2
-   Area 46 168 136 10
-   TargetMoniker ":Status.1"
-   BackgroundColour "StatusGreen"
-   BGColourMoniker ":Count.1"
-   Align Centre
-   Framed
-end
-
-NumericalInput NumericalInput2
-   Area 152 100 44 13
-   TargetMoniker ":ExtraData.0.0(Duty)"
-   SourceViewMgr PageController 1
-end
-
-StaticText StaticText3
-   Area 128 102 17 8
-   Label "&Duty"
-   SourceViewMgr PageController 1
-end
-
-StaticText StaticText4
-   Area 160 118 30 8
-   Label "(Optional)"
-   SourceViewMgr PageController 1
-end
-
-WorkSheetMatrix WSheetMatrix
-   Area 4 2 232 138
-   SourceViewMgr PageController 2
-   FlyByDescription "Properties of connected streams"
-   CellSize 46 9
-   LeftLabelWidth 74
-   ShowLabels Left
-   ShowUnits Left
-   Direction Horizontal
-   WrapAfter 2
-   Info WRKName
-   Info WRKVap
-   Info WRKTemp
-   Info WRKPress
-   Info WRKMolarFlow
-   Info WRKMassFlow
-   Info WRKLiqVolFlow
-   Info WRKHeatFlow
-end
-
-TextMatrixInfo WRKName
-   Moniker "SolvableObject.300.[]:Name"
-   Label "Name"
-   Message ":View"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKVap
-   Moniker "SolvableObject.300.[]:VapourFraction.501.0"
-   Format "%.4f"
-   Label "Vapour"
-   Message ":View"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKTemp
-   Moniker "SolvableObject.300.[]:Temperature.501.0"
-   Format "%.4f"
-   Label "Temperature"
-   Message ":View"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKPress
-   Moniker "SolvableObject.300.[]:Pressure.501.0"
-   Format "%.4f"
-   Label "Pressure"
-   Message ":View"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKMolarFlow
-   Moniker "SolvableObject.300.[]:MolarFlow.501.0"
-   Format "%.4f"
-   Label "Molar Flow"
-   Message ":SetMoleFracs;:View EditCompositionsView"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKMassFlow
-   Moniker "SolvableObject.300.[]:MassFlow.501.0"
-   Format "%.4f"
-   Label "Mass Flow"
-   Message ":SetMassFracs;:View EditCompositionsView"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKLiqVolFlow
-   Moniker "SolvableObject.300.[]:LiqVolFlow.501.0"
-   Format "%.4f"
-   Label "LiqVol Flow"
-   Message ":SetVolFracs;:View EditCompositionsView"
-   RunDirection Same
-end
-
-NumericMatrixInfo WRKHeatFlow
-   Moniker "SolvableObject.300.[]:HeatFlow.501.0"
-   Format "%12.5e"
-   Label "Heat Flow"
-   Message ":View"
-   RunDirection Same
-end
-
