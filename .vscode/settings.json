@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./dummy_hysys/dummy_kernel/Cargo.toml"
+    ]
+}
