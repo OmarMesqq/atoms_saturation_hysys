@@ -15,6 +15,13 @@ namespace Atoms
 
     public class Saturation
     {
+        [DllImport("dummy_kernel.dll")]
+        public static extern int sendScalarT();
+        [DllImport("dummy_kernel.dll")]
+        public static extern float sendScalarP();
+        [DllImport("dummy_kernel.dll")]
+        public static extern void* sendVectorY();
+
         [DllImport("atoms_saturation_kernel.dll")]
         public static extern int info_dump(IntPtr str);
 
@@ -39,7 +46,7 @@ namespace Atoms
 
         public int Initialize(HYSYS.ExtnUnitOperationContainer Container, bool IsRecalling)
         {
-            LogInfo("Bridge initialized");
+            LogInfo("Dummy initialized");
             myContainer = Container;
             Feed = myContainer.FindVariable("FeedStream").Variable.Object;
             Product = myContainer.FindVariable("ProductStream").Variable.Object;
@@ -59,10 +66,16 @@ namespace Atoms
                 if (Feed == null) { return; }
                 if (Product == null) { return; }
 
-                LogInfo("Corrente de entrada:");
-                LogInfo(Feed.name);
-                LogInfo("Corrente de saída:");
-                LogInfo(Product.name);
+                int T = sendScalarT();
+                float P = sendScalarP();
+                void* Y = sendVectorY();
+
+                LogInfo("T:");
+                LogInfo(T.ToString());
+                LogInfo("P:");
+                LogInfo(P.ToString());
+                LogInfo("Y:");
+                // implement data structure for Y
             }
             catch {}
         }
