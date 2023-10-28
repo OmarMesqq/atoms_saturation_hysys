@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 ndarray = "0.15"
+libc = "0.2.80"
