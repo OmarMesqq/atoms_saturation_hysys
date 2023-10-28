@@ -9,6 +9,15 @@ using System.Runtime.InteropServices;
 
 namespace Atoms
 {
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ReceiveScalarYWDelegate(float scalar);
+
+    public struct VectorY
+    {
+        public int size;
+        public float* data;
+    } 
+
     [ComVisible(true)]
     [ProgId("Atoms.Saturation")]
     [ClassInterface(ClassInterfaceType.AutoDispatch)]
@@ -16,11 +25,11 @@ namespace Atoms
     public class Saturation
     {
         [DllImport("dummy_kernel.dll")]
-        public static extern int sendScalarT();
+        public static extern int send_scalar_t();
         [DllImport("dummy_kernel.dll")]
-        public static extern float sendScalarP();
+        public static extern float send_scalar_p();
         [DllImport("dummy_kernel.dll")]
-        public static extern void* sendVectorY();
+        public static extern void* send_vector_y();
 
         [DllImport("atoms_saturation_kernel.dll")]
         public static extern int info_dump(IntPtr str);
@@ -36,6 +45,12 @@ namespace Atoms
             {
                 Marshal.FreeHGlobal(messagePtr);
             }
+        }
+
+        public static void ReceiveScalarYW(float scalar)
+        {
+            ReceiveScalarYWDelegate callback = new ReceiveScalarYWDelegate(ReceiveScalarYW);
+            IntPtr callbackPtr = Marshal.GetFunctionPointerForDelegate(callback);
         }
         #region: Class Variables declaration
         private HYSYS.ExtnUnitOperationContainer myContainer;
@@ -66,16 +81,24 @@ namespace Atoms
                 if (Feed == null) { return; }
                 if (Product == null) { return; }
 
-                int T = sendScalarT();
-                float P = sendScalarP();
-                void* Y = sendVectorY();
+                int t = send_scalar_t();
+                float p = send_scalar_p();
+                void* y = send_vector_y();
 
-                LogInfo("T:");
-                LogInfo(T.ToString());
-                LogInfo("P:");
-                LogInfo(P.ToString());
-                LogInfo("Y:");
-                // implement data structure for Y
+                LogInfo("t:");
+                LogInfo(t.ToString());
+
+                LogInfo("p:");
+                LogInfo(p.ToString());
+
+                LogInfo("y:");
+                LogInfo(((VectorY)y).size.ToString());
+                for (int i = 0; i < ((VectorY)y).size; i++)
+                {
+                    LogInfo(((VectorY)y).data[i].ToString());
+                }
+
+                ReceiveScalarYW(1.0f);
             }
             catch {}
         }
