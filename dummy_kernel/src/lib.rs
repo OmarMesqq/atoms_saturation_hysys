@@ -1,13 +1,16 @@
-use ndarray::Array2;
-use std::mem::ManuallyDrop;
+use ndarray::{Array1, Array2, Array3};
 use std::os::raw::c_float;
 use std::fs::OpenOptions;
 use std::io::Write;
 
+/*
+TODO: Usar forget ou manually drop?
+*/
+
 #[repr(C)]
 pub struct VectorY {
     data: *const f64,
-    size: usize,
+    size: i32,
 }
 
 #[no_mangle]
@@ -24,38 +27,72 @@ pub extern "C" fn send_scalar_p() -> f64 {
 
 #[no_mangle]
 pub extern "C" fn send_vector_y() -> VectorY {
-    let y = Array2::<f64>::zeros((2, 2));
+    let data = vec![1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0];
+    //let y = Array1::from_vec(data);
+    let y = Array3::from_shape_vec((1,3,3), data).unwrap();
     let y_ext = VectorY {
         data: y.as_ptr(),
-        size: y.len(),
+        size: y.len() as i32,
     };
-    let _ = ManuallyDrop::new(y);  
+    let _ = std::mem::ManuallyDrop::new(y);  
     y_ext
 }
 
 #[no_mangle]
-pub extern "C" fn receive_scalar_yw(callback: extern "C" fn(c_float)) {
-    let yw: c_float = 123.0;
-    callback(yw);
+pub extern "C" fn receive_scalar_yw(yw: c_float) {
+    let foo = yw as f32;
+    let writer = || -> std::io::Result<()> {
+        let mut file = OpenOptions::new()
+        .create(true)  
+        .append(true)  
+        .write(true)
+        .open("rust_info_dump.txt")?;
+
+        if file.metadata()?.len() > 0 {
+            match file.write_all(b"\r\n") {
+                Ok(()) => println!("Ok"),
+                Err(_) => println!("Error")
+            }
+        }
+        
+        match file.write_all(b"\n") {
+            Ok(()) => println!("Ok"),
+            Err(_) => println!("Error")
+        }
+        file.write_all(foo.to_string().as_bytes())?;
+        Ok(())
+    }; 
+    let _ = writer();
+
 }
 
 #[no_mangle]
-pub extern "C" fn info_dump(str: *const libc::c_char) -> std::io::Result<()> {
+pub extern "C" fn info_dump(str: *const libc::c_char) -> () {
     let c_str = unsafe {
         std::ffi::CStr::from_ptr(str)
     };
     let string = c_str.to_str().unwrap();
 
-    let mut file = OpenOptions::new()
-        .create(true)  // Create the file if it doesn't exist
-        .append(true)  // Append to the file if it already exists
+    let writer = || -> std::io::Result<()> {
+        let mut file = OpenOptions::new()
+        .create(true)  
+        .append(true)  
         .write(true)
-        .open("info_dump.txt")?;
+        .open("csharp_info_dump.txt")?;
 
-    if file.metadata()?.len() > 0 {
-        file.write_all(b"\r\n");
-    }
-    file.write_all(b"\n");
-    file.write_all(string.as_bytes())?;
-    Ok(())
+        if file.metadata()?.len() > 0 {
+            match file.write_all(b"\r\n") {
+                Ok(()) => println!("Ok"),
+                Err(_) => println!("Error")
+            }
+        }
+        
+        match file.write_all(b"\n") {
+            Ok(()) => println!("Ok"),
+            Err(_) => println!("Error")
+        }
+        file.write_all(string.as_bytes())?;
+        Ok(())
+    }; 
+    let _ = writer();   
 }

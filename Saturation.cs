@@ -9,14 +9,12 @@ using System.Runtime.InteropServices;
 
 namespace Atoms
 {
-    //[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    //public delegate void ReceiveScalarYWDelegate(float scalar);
-
+    [StructLayout(LayoutKind.Sequential)]
     public struct VectorY
     {
-        public int size;
         public IntPtr data;
-    } 
+        public int size;
+    }
 
     [ComVisible(true)]
     [ProgId("Atoms.Saturation")]
@@ -28,11 +26,14 @@ namespace Atoms
         public static extern int send_scalar_t();
         [DllImport("dummy_kernel.dll")]
         public static extern float send_scalar_p();
-        //[DllImport("dummy_kernel.dll")]
-        //public static extern VectorY send_vector_y();
+        [DllImport("dummy_kernel.dll")]
+        public static extern VectorY send_vector_y();
 
         [DllImport("dummy_kernel.dll")]
-        public static extern int info_dump(IntPtr str);
+        public static extern void info_dump(IntPtr str);
+
+        [DllImport("dummy_kernel.dll")]
+        public static extern void receive_scalar_yw(float number);
 
         private void LogInfo(string message)
         {
@@ -47,11 +48,6 @@ namespace Atoms
             }
         }
 
-        //public static void ReceiveScalarYW(float scalar)
-        //{
-        //    ReceiveScalarYWDelegate callback = new ReceiveScalarYWDelegate(ReceiveScalarYW);
-        //    IntPtr callbackPtr = Marshal.GetFunctionPointerForDelegate(callback);
-        //}
         #region: Class Variables declaration
         private HYSYS.ExtnUnitOperationContainer myContainer;
         private HYSYS.ProcessStream Feed;
@@ -81,26 +77,28 @@ namespace Atoms
                 if (Product == null) { return; }
 
                 int t = send_scalar_t();
-                //float p = send_scalar_p();
-                //VectorY y = send_vector_y();
+                float p = send_scalar_p();
+                VectorY y = send_vector_y();
 
                 LogInfo("t:");
                 LogInfo(t.ToString());
 
-                //LogInfo("p:");
-                //LogInfo(p.ToString());
+                LogInfo("p:");
+                LogInfo(p.ToString());
 
-                //LogInfo("y:");
-                //LogInfo(((VectorY)y).size.ToString());
-                //float[] data = new float[y.size];
-                //Marshal.Copy(y.data, data, 0, y.size);
+                double[] data = new double[y.size];
+                Marshal.Copy(y.data, data,0, y.size);
+                LogInfo("Value of the vector Y is:");
+                for (int i = 0; i < y.size; i++)
+                {
+                    LogInfo(data[i].ToString());
+                }
 
-                //for (int i = 0; i < ((VectorY)y).size; i++)
-                //{
-                //    LogInfo(data[i].ToString());
-                //}
+                LogInfo("Size of the vector Y is:");
+                LogInfo(y.size.ToString());
 
-                //ReceiveScalarYW(1.0f);
+                float myNum = 2525353.53f;
+                receive_scalar_yw(myNum);
             }
             catch {}
         }
