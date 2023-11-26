@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using HYSYS;
 using System.Runtime.InteropServices;
 
 namespace Atoms
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct VectorY
-    {
-        public IntPtr data;
-        public int size;
-    }
 
     [ComVisible(true)]
     [ProgId("Atoms.Saturation")]
@@ -23,19 +12,20 @@ namespace Atoms
     public class Saturation
     {
         [DllImport("atoms_saturation_kernel.dll")]
-        public static extern void info_dump(IntPtr str);
+        public static extern void receive_info_from_hysys(IntPtr value, IntPtr label);
 
-
-        private void LogInfo(string message)
+        private void sendToHysys(string value, string label)
         {
-            IntPtr messagePtr = Marshal.StringToHGlobalAnsi(message);
+            IntPtr valuePtr = Marshal.StringToHGlobalAnsi(value);
+            IntPtr labelPtr = Marshal.StringToHGlobalAnsi(label);
             try
             {
-                info_dump(messagePtr);
+                receive_info_from_hysys(valuePtr, labelPtr);
             }
             finally
             {
-                Marshal.FreeHGlobal(messagePtr);
+                Marshal.FreeHGlobal(valuePtr);
+                Marshal.FreeHGlobal(labelPtr);
             }
         }
 
@@ -69,7 +59,7 @@ namespace Atoms
         {
             try
             {
-                if (isForgetpass == true) { LogInfo("isForgetpass is true"); return; }
+                if (isForgetpass == true) { return; }
 
                 Feed = myContainer.FindVariable("FeedStream").Variable.Object;
                 Product = myContainer.FindVariable("ProductStream").Variable.Object;
@@ -80,28 +70,22 @@ namespace Atoms
                 crossCO2 = myContainer.FindVariable("Cross_CO2_sol").Variable;
 
 
-                if (Feed == null) { LogInfo("Feed stream is null"); return; }
+                
+                if (Feed != null &&
+                    Feed.Temperature.IsKnown == true && 
+                    Feed.Pressure.IsKnown == true)
+                {
+                    string temp = Feed.Temperature.GetValue().ToString();
+                    
+                    sendToHysys(temp, "temp");
 
-                if (Product == null) { LogInfo("Product stream is null"); return; }
+                    string pres = Feed.Pressure.GetValue().ToString();
+                    
+                    sendToHysys(pres, "pres");
 
-                if (eosModel.Value == emptyVal) { LogInfo("EoS model is empty"); return; }
-
-                if (assocModel.Value == emptyVal) { LogInfo("Assoc model is empty"); return; }
-                if (waterFraction.Value == emptyVal) { LogInfo("Water frac is empty"); return; }
-                if (crossH2S.Value == emptyVal) { LogInfo("Cross H2S is empty"); return; }
-                if (crossCO2.Value == emptyVal) { LogInfo("Cross CO2 is empty"); return; }
-
-
-                LogInfo("EoS Model:");
-                LogInfo(eosModel.Value.ToString());
-                LogInfo("Association model:");
-                LogInfo(assocModel.Value.ToString());
-                LogInfo("Water Fraction so far:");
-                LogInfo(waterFraction.Value.ToString());
-                LogInfo("Cross H2S model:");
-                LogInfo(crossH2S.Value.ToString());
-                LogInfo("Cross CO2 model:");
-                LogInfo(crossCO2.Value.ToString());
+        
+                }
+                
             }
             catch { }
         }
