@@ -1,0 +1,3 @@
+[submodule "atoms_saturation_kernel"]
+	path = atoms_saturation_kernel
+	url = git@github.com:OmarMesqq/atoms_saturation_kernel.git
