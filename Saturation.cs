@@ -70,17 +70,14 @@ namespace Atoms
                 crossCO2 = myContainer.FindVariable("Cross_CO2_sol").Variable;
 
 
-
                 if (Feed != null &&
                     Feed.Temperature.IsKnown == true && 
                     Feed.Pressure.IsKnown == true)
                 {
                     string temp = Feed.Temperature.GetValue().ToString();
-                    
                     sendToHysys(temp, "temp");
 
                     string pres = Feed.Pressure.GetValue().ToString();
-                    
                     sendToHysys(pres, "pres"); 
 
                     try
@@ -94,9 +91,7 @@ namespace Atoms
                         sendToHysys(ex.ToString(), "Components exception!");
                     }
 
-
                 }
-
             }
             catch (Exception ex) {
                 sendToHysys(ex.ToString(), "External exception!");
