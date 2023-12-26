@@ -1,9 +1,12 @@
 ﻿using System;
 using HYSYS;
 using System.Runtime.InteropServices;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Atoms
 {
+    public delegate void GetWaterFrac(double data);
 
     [ComVisible(true)]
     [ProgId("Atoms.Saturation")]
@@ -12,7 +15,29 @@ namespace Atoms
     public class Saturation
     {
         [DllImport("atoms_saturation_kernel.dll")]
+        public static extern void send_info_to_hysys(GetWaterFrac callback);
+
+        private void OnDataReceived(double data)
+        {
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string extensionFolder = Path.Combine(desktopPath, "ext"); 
+            string filePath = Path.Combine(extensionFolder, "info_dump.txt");
+
+            string content = $"Received data from Rust: {data}\n";
+
+            File.AppendAllText(filePath, content);
+
+            waterFraction.SetValue(data);
+        }
+
+
+        [DllImport("atoms_saturation_kernel.dll")]
         public static extern void receive_info_from_hysys(IntPtr value, IntPtr label);
+
+        public void WaterFracFromRust()
+        {
+            send_info_to_hysys(OnDataReceived);
+        }
 
         private void sendToHysys(string value, string label)
         {
@@ -75,6 +100,7 @@ namespace Atoms
                     Feed.Pressure.IsKnown == true)
                 {
                     string temp = Feed.Temperature.GetValue().ToString();
+                    
                     sendToHysys(temp, "temp");
 
                     string pres = Feed.Pressure.GetValue().ToString();
@@ -91,6 +117,13 @@ namespace Atoms
                         sendToHysys(ex.ToString(), "Components exception!");
                     }
 
+                    try
+                    {
+                        WaterFracFromRust();
+                    } catch (Exception ex)
+                    {
+                        sendToHysys(ex.ToString(), "C# interop exception!");
+                    }
                 }
             }
             catch (Exception ex) {
