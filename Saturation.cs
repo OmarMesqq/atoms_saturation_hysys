@@ -2,31 +2,36 @@
 using HYSYS;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace Atoms
 {
-    public delegate void GetWaterFrac(double data);
+    public delegate void WaterFraction(double data);
 
     [ComVisible(true)]
     [ProgId("Atoms.Saturation")]
     [ClassInterface(ClassInterfaceType.AutoDispatch)]
-
     public class Saturation
     {
+        private void Logger(string message)
+        {
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string extensionFolder = Path.Combine(desktopPath, "ext");
+            string filePath = Path.Combine(extensionFolder, "Logger_log.txt");
+
+            string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            string content = $"{timestamp}: {message}\n";
+
+            File.AppendAllText(filePath, content);
+        }
+
+
         [DllImport("atoms_saturation_kernel.dll")]
-        public static extern void send_info_to_hysys(GetWaterFrac callback);
+        public static extern void send_info_to_hysys(WaterFraction callback);
 
         private void OnDataReceived(double data)
         {
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string extensionFolder = Path.Combine(desktopPath, "ext"); 
-            string filePath = Path.Combine(extensionFolder, "info_dump.txt");
-
-            string content = $"Received data from Rust: {data}\n";
-
-            File.AppendAllText(filePath, content);
-
+            string message = $"Received data from Rust: {data}\n";
+            Logger(message);
             waterFraction.SetValue(data);
         }
 
@@ -34,23 +39,23 @@ namespace Atoms
         [DllImport("atoms_saturation_kernel.dll")]
         public static extern void receive_info_from_hysys(IntPtr value, IntPtr label);
 
-        public void WaterFracFromRust()
+        public void GetWaterFraction()
         {
             send_info_to_hysys(OnDataReceived);
         }
 
-        private void sendToHysys(string value, string label)
+        private void SendToHysys(string temperature, string pressure)
         {
-            IntPtr valuePtr = Marshal.StringToHGlobalAnsi(value);
-            IntPtr labelPtr = Marshal.StringToHGlobalAnsi(label);
+            IntPtr temperaturePtr = Marshal.StringToHGlobalAnsi(temperature);
+            IntPtr pressurePtr = Marshal.StringToHGlobalAnsi(pressure);
             try
             {
-                receive_info_from_hysys(valuePtr, labelPtr);
+                receive_info_from_hysys(temperaturePtr, pressurePtr);
             }
             finally
             {
-                Marshal.FreeHGlobal(valuePtr);
-                Marshal.FreeHGlobal(labelPtr);
+                Marshal.FreeHGlobal(temperaturePtr);
+                Marshal.FreeHGlobal(pressurePtr);
             }
         }
 
@@ -84,7 +89,7 @@ namespace Atoms
         {
             try
             {
-                if (isForgetpass == true) { return; }
+                if (isForgetpass) return;
 
                 Feed = myContainer.FindVariable("FeedStream").Variable.Object;
                 Product = myContainer.FindVariable("ProductStream").Variable.Object;
@@ -96,38 +101,29 @@ namespace Atoms
 
 
                 if (Feed != null &&
-                    Feed.Temperature.IsKnown == true && 
-                    Feed.Pressure.IsKnown == true)
+                    Feed.Temperature.IsKnown &&
+                    Feed.Pressure.IsKnown)
                 {
-                    string temp = Feed.Temperature.GetValue().ToString();
-                    
-                    sendToHysys(temp, "temp");
+                    double temp = Feed.Temperature.GetValue();
+                    double pres = Feed.Pressure.GetValue();
 
-                    string pres = Feed.Pressure.GetValue().ToString();
-                    sendToHysys(pres, "pres"); 
+                    if (temp == 0 || pres == 0) return;
+
+                    SendToHysys(temp.ToString(), pres.ToString());
 
                     try
                     {
-                        dynamic components = Feed.Flowsheet.FluidPackage.Components;
-                        string componentNames = string.Join(", ", components.Names);
-                        sendToHysys(componentNames, "components");
+                        GetWaterFraction();
                     }
                     catch (Exception ex)
                     {
-                        sendToHysys(ex.ToString(), "Components exception!");
-                    }
-
-                    try
-                    {
-                        WaterFracFromRust();
-                    } catch (Exception ex)
-                    {
-                        sendToHysys(ex.ToString(), "C# interop exception!");
+                        Logger(ex.ToString());
                     }
                 }
             }
-            catch (Exception ex) {
-                sendToHysys(ex.ToString(), "External exception!");
+            catch (Exception ex)
+            {
+                Logger(ex.ToString());
             }
         }
     }
