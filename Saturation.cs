@@ -15,8 +15,8 @@ namespace Atoms
         private void Logger(string message)
         {
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string extensionFolder = Path.Combine(desktopPath, "ext");
-            string filePath = Path.Combine(extensionFolder, "Logger_log.txt");
+            string extensionFolder = Path.Combine(desktopPath, "ext");  // change this depending on where the DLL is
+            string filePath = Path.Combine(extensionFolder, "csharp_log.txt");
 
             string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
             string content = $"{timestamp}: {message}\n";
@@ -28,20 +28,19 @@ namespace Atoms
         [DllImport("atoms_saturation_kernel.dll")]
         public static extern void send_info_to_hysys(WaterFraction callback);
 
-        private void OnDataReceived(double data)
-        {
-            string message = $"Received data from Rust: {data}\n";
-            Logger(message);
-            waterFraction.SetValue(data);
-        }
-
-
         [DllImport("atoms_saturation_kernel.dll")]
         public static extern void receive_info_from_hysys(IntPtr value, IntPtr label);
 
+        private void OnWaterFractionReceived(double value)
+        {
+            string message = $"Received water fraction from the modelling libray: {value}\n";
+            Logger(message);
+            waterFraction.SetValue(value);
+        }
+
         public void GetWaterFraction()
         {
-            send_info_to_hysys(OnDataReceived);
+            send_info_to_hysys(OnWaterFractionReceived);
         }
 
         private void SendToHysys(string temperature, string pressure)
@@ -60,7 +59,7 @@ namespace Atoms
         }
 
         #region: Class Variables declaration
-        private HYSYS.ExtnUnitOperationContainer myContainer;
+        private HYSYS.ExtnUnitOperationContainer extnContainer;
         private HYSYS.ProcessStream Feed;
         private HYSYS.ProcessStream Product;
         private HYSYS.InternalRealVariable eosModel;
@@ -73,14 +72,14 @@ namespace Atoms
 
         public int Initialize(HYSYS.ExtnUnitOperationContainer Container, bool IsRecalling)
         {
-            myContainer = Container;
-            Feed = myContainer.FindVariable("FeedStream").Variable.Object;
-            Product = myContainer.FindVariable("ProductStream").Variable.Object;
-            eosModel = myContainer.FindVariable("Eos_Model").Variable;
-            assocModel = myContainer.FindVariable("Assoc_Model").Variable;
-            waterFraction = myContainer.FindVariable("Water_Fraction").Variable;
-            crossH2S = myContainer.FindVariable("Cross_H2S_sol").Variable;
-            crossCO2 = myContainer.FindVariable("Cross_CO2_sol").Variable;
+            extnContainer = Container;
+            Feed = extnContainer.FindVariable("FeedStream").Variable.Object;
+            Product = extnContainer.FindVariable("ProductStream").Variable.Object;
+            eosModel = extnContainer.FindVariable("Eos_Model").Variable;
+            assocModel = extnContainer.FindVariable("Assoc_Model").Variable;
+            waterFraction = extnContainer.FindVariable("Water_Fraction").Variable;
+            crossH2S = extnContainer.FindVariable("Cross_H2S_sol").Variable;
+            crossCO2 = extnContainer.FindVariable("Cross_CO2_sol").Variable;
 
             return (int)HYSYS.CurrentExtensionVersion_enum.extnCurrentVersion;
         }
@@ -91,13 +90,13 @@ namespace Atoms
             {
                 if (isForgetpass) return;
 
-                Feed = myContainer.FindVariable("FeedStream").Variable.Object;
-                Product = myContainer.FindVariable("ProductStream").Variable.Object;
-                eosModel = myContainer.FindVariable("Eos_Model").Variable;
-                assocModel = myContainer.FindVariable("Assoc_Model").Variable;
-                waterFraction = myContainer.FindVariable("Water_Fraction").Variable;
-                crossH2S = myContainer.FindVariable("Cross_H2S_sol").Variable;
-                crossCO2 = myContainer.FindVariable("Cross_CO2_sol").Variable;
+                Feed = extnContainer.FindVariable("FeedStream").Variable.Object;
+                Product = extnContainer.FindVariable("ProductStream").Variable.Object;
+                eosModel = extnContainer.FindVariable("Eos_Model").Variable;
+                assocModel = extnContainer.FindVariable("Assoc_Model").Variable;
+                waterFraction = extnContainer.FindVariable("Water_Fraction").Variable;
+                crossH2S = extnContainer.FindVariable("Cross_H2S_sol").Variable;
+                crossCO2 = extnContainer.FindVariable("Cross_CO2_sol").Variable;
 
 
                 if (Feed != null &&
